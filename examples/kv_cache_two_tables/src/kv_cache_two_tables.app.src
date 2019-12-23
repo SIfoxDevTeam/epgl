@@ -1,0 +1,17 @@
+{application, kv_cache_two_tables,
+ [{description, "An OTP application"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, { kv_cache_two_tables_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+    epgl
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, []},
+  {links, []}
+ ]}.

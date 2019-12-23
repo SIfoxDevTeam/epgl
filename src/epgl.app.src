@@ -1,0 +1,5 @@
+{application, epgl, [
+    {description, "PostgreSQL streaming replication library"},
+    {vsn, semver},
+    {applications, [kernel, stdlib, epgsql]}
+]}.

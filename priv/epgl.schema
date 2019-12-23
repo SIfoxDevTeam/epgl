@@ -1,0 +1,83 @@
+{mapping, "epgl.check_lsn_mode", "epgl.check_lsn_mode", [
+    {datatype, {enum, [skip, log, off]}},
+    {default, skip}
+]}.
+
+{mapping, "epgl.reconnect_interval", "epgl.reconnect_interval", [
+    {datatype, integer},
+    {default, 10}
+]}.
+
+{mapping, "epgl.debug", "epgl.debug", [
+    {datatype, {enum, [true, false]}},
+    {default, false}
+]}.
+
+%% @doc In case of primary key update send additional delete message with old primary key. And insert message instead of update message for new primary key
+{mapping, "epgl.two_msgs_for_pk_update", "epgl.two_msgs_for_pk_update", [
+    {datatype, {enum, [true, false]}},
+    {default, false}
+]}.
+
+%% @doc Decoding output plugin for replication.
+{mapping, "epgl.repl_slot_output_plugin", "epgl.repl_slot_output_plugin", [
+    {datatype, {enum, [pglogical, pgoutput]}},
+    {default, pglogical}
+]}.
+
+%% @doc If decoding plugin filter some WAL records align_lsn = true must be set, otherwise it will not be possible to stop PostgreSql DB correctly when logical replication is running.
+{mapping, "epgl.align_lsn", "epgl.align_lsn", [
+    {datatype, {enum, [true, false]}},
+    {default, true}
+]}.
+
+%% @doc Field values for textual data will be in this encoding in native protocol text, binary or internal representation. For the native protocol this is currently always the same as `database_encoding`.
+{mapping, "epgl.pglogical_config.expected_encoding", "epgl.pglogical_config.expected_encoding", [
+    {datatype, string}
+]}.
+
+%% @doc True if the upstream is big-endian.
+{mapping, "epgl.pglogical_config.binary.bigendian", "epgl.pglogical_config.binary.bigendian", [
+    {datatype, {flag, {true, 1}, {false, 0}}},
+    {default, true}
+]}.
+
+%% @doc Same as sizeof_int, but for the PostgreSQL Datum typedef.
+{mapping, "epgl.pglogical_config.binary.sizeof_datum", "epgl.pglogical_config.binary.sizeof_datum", [
+    {datatype, integer}
+]}.
+
+%% @doc sizeof(int) on the upstream.
+{mapping, "epgl.pglogical_config.binary.sizeof_int", "epgl.pglogical_config.binary.sizeof_int", [
+    {datatype, integer}
+]}.
+
+%% @doc sizeof(long) on the upstream.
+{mapping, "epgl.pglogical_config.binary.sizeof_long", "epgl.pglogical_config.binary.sizeof_long", [
+    {datatype, integer}
+]}.
+
+%% @doc Upstream PostgreSQL’s float4_byval compile option.
+{mapping, "epgl.pglogical_config.binary.float4_byval", "epgl.pglogical_config.binary.float4_byval", [
+    {datatype, {flag, {true, 1}, {false, 0}}}
+]}.
+
+%% @doc Upstream PostgreSQL’s float8_byval compile option.
+{mapping, "epgl.pglogical_config.binary.float8_byval", "epgl.pglogical_config.binary.float8_byval", [
+    {datatype, {flag, {true, 1}, {false, 0}}}
+]}.
+
+%% @doc Whether TIME, TIMESTAMP and TIMESTAMP WITH TIME ZONE will be sent using integer or floating point representation.
+{mapping, "epgl.pglogical_config.binary.integer_datetimes", "epgl.pglogical_config.binary.integer_datetimes", [
+    {datatype, {flag, {true, 1}, {false, 0}}}
+]}.
+
+%% @doc PostgreSQL mahor version of server, e.g. 905, (select PG_VERSION_NUM()/100);
+{mapping, "epgl.pglogical_config.binary.basetypes_major_version", "epgl.pglogical_config.binary.basetypes_major_version", [
+    {datatype, string}
+]}.
+
+%% @doc PostgreSQL server_version of server, e.g. 90506  (select PG_VERSION_NUM();)
+{mapping, "epgl.pglogical_config.pg_version", "epgl.pglogical_config.pg_version", [
+    {datatype, string}
+]}.

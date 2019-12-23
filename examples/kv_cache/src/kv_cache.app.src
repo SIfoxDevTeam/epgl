@@ -1,0 +1,17 @@
+{application, kv_cache,
+ [{description, "An OTP application"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, { kv_cache_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+    epgl
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, []},
+  {links, []}
+ ]}.

@@ -1,0 +1,4 @@
+[{<<"epgsql">>,
+  {git,"https://github.com/epgsql/epgsql.git",
+       {ref,"cd3144d88f476b0425ea42319a3f6a8a22c13edf"}},
+  0}].
