@@ -3,6 +3,9 @@ REBAR = rebar3
 compile:
 	@$(REBAR) compile
 
+xref:
+	@$(REBAR) xref
+
 clean:
 	@$(REBAR) clean
 

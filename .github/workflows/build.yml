@@ -1,0 +1,26 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest]
+        otp-version: [21.3, 22.2, 23.0, 24.0]
+    runs-on: ${{ matrix.platform }}
+    container:
+      image: erlang:${{ matrix.otp-version }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Compile
+      run: make compile
+    - name: Xref
+      run: make xref
