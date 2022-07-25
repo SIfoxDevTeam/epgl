@@ -35,7 +35,9 @@
     {username, Username   :: string()} |
     {password, Password   :: string()}.
 
--export_type([connect_option/0]).
+-type db_args() ::  [connect_option()].
+
+-export_type([connect_option/0, db_args/0]).
 
 -spec start_subscriber(
     SubscriberId :: atom(),
@@ -98,7 +100,7 @@ get_table_initial_state(Connection, TableName, SnapshotName) ->
     Connection :: pid(),
     ReplicationSets :: string(),
     SnapshotName :: string(),
-    TablesOrder :: #{TableName :: binary() => Ord :: integer()}) ->
+    TablesOrder :: #{TableName :: binary() => Ord :: integer()} | undefined) ->
     ok | {error, Reason :: term()}.
 init_replication_set(Connection, ReplicationSets, SnapshotName, TablesOrder) ->
     gen_server:call(Connection, {init_replication_set, ReplicationSets, SnapshotName, TablesOrder}, infinity).

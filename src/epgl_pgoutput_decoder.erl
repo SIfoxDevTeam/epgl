@@ -176,8 +176,7 @@ decode_tuple_type(?TUPLE_TYPE_OLD) -> old.
 
 decode_msg_type(?MESSAGE_TYPE_INSERT) -> insert;
 decode_msg_type(?MESSAGE_TYPE_UPDATE) -> update;
-decode_msg_type(?MESSAGE_TYPE_DELETE) -> delete;
-decode_msg_type(?MESSAGE_TYPE_TRUNCATE) -> truncate.
+decode_msg_type(?MESSAGE_TYPE_DELETE) -> delete.
 
 decode_tuple_value_kind(?TUPLE_VALUE_KIND_NULL) -> null;
 decode_tuple_value_kind(?TUPLE_VALUE_KIND_UNCHANGED) -> unchanged;

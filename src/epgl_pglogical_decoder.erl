@@ -127,10 +127,10 @@ decode_tuple_fields(<<>>, _NumOfFields, Acc) ->
 decode_tuple_fields(Rest, 0, Acc) ->
     {lists:reverse(Acc), Rest};
 decode_tuple_fields(<<?TUPLE_VALUE_KIND_NULL:8, Rest/binary>>, NumOfFields, Acc) ->
-    decode_tuple_fields(Rest, NumOfFields - 1, 
+    decode_tuple_fields(Rest, NumOfFields - 1,
         [#column_value{kind = decode_tuple_value_kind(?TUPLE_VALUE_KIND_NULL), value = null} | Acc]);
 decode_tuple_fields(<<?TUPLE_VALUE_KIND_UNCHANGED:8, Rest/binary>>, NumOfFields, Acc) ->
-    decode_tuple_fields(Rest, NumOfFields - 1, 
+    decode_tuple_fields(Rest, NumOfFields - 1,
         [#column_value{kind = decode_tuple_value_kind(?TUPLE_VALUE_KIND_UNCHANGED), value = unchanged} | Acc]);
 decode_tuple_fields(<<Kind:8, Length:32, Data:Length/bytes, Rest/binary>>, NumOfFields, Acc) ->
     Value =

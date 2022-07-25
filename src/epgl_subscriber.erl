@@ -43,14 +43,14 @@
     Rows :: [#row{}]) -> ok.
 
 -record(state, {
-    db_connect_opts         :: epgl:connect_option(),
-    conn                    :: pid(),
-    conn_normal             :: pid(),
+    db_connect_opts         :: epgl:db_args(),
+    conn                    :: pid() | undefined,
+    conn_normal             :: pid() | undefined,
     callbacks               :: map(),
     metadata = #{}          :: map(),
     rows = []               :: list(),
-    replication_slot        :: string(),
-    replication_set         :: string(),
+    replication_slot        :: string() | undefined,
+    replication_set         :: string() | undefined,
     last_processed_lsn      :: integer(),
     check_lsn_mode          :: skip | log | off,
     max_reconnect_attempts  :: integer() | infinite,
@@ -616,5 +616,4 @@ add_callback_data([Callback | Rest], CallbackData, RowData, TableName, ColumnsNa
 
 get_option(auto_cast, Options) -> maps:get(auto_cast, Options, true);
 get_option(binary_mode, Options) -> maps:get(binary_mode, Options, false);
-get_option(reload_columns_on_metadata_msg, Options) -> maps:get(reload_columns_on_metadata_msg, Options, false);
-get_option(Key, Options) -> maps:get(Key, Options, undefined).
+get_option(reload_columns_on_metadata_msg, Options) -> maps:get(reload_columns_on_metadata_msg, Options, false).
