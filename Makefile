@@ -6,6 +6,9 @@ compile:
 xref:
 	@$(REBAR) xref
 
+dialyzer:
+	@$(REBAR) dialyzer
+
 clean:
 	@$(REBAR) clean
 

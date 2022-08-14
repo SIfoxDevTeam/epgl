@@ -24,3 +24,5 @@ jobs:
       run: make compile
     - name: Xref
       run: make xref
+    - name: Dialyzer
+      run: make dialyzer

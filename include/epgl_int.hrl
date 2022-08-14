@@ -27,16 +27,16 @@
 
 -record(relation_column, {
     flags :: integer(),
-    name :: binary(),
-    data_type_id :: integer(),
-    atttypmod :: integer()
+    name :: binary() | undefined,
+    data_type_id :: integer() | undefined,
+    atttypmod :: integer() | undefined
 }).
 
 -record(relation_msg, {
     id :: integer(),
     namespace :: binary(),
     name :: binary(),
-    replica_identity :: integer(),
+    replica_identity :: integer() | undefined,
     num_columns :: integer(),
     columns :: [#relation_column{}]
 }).
@@ -49,7 +49,7 @@
 
 -record(column_value, {
     kind :: column_value_kind(),
-    value :: binary()
+    value :: binary() | null | unchanged
 }).
 
 -record(row_msg, {
@@ -57,7 +57,7 @@
     relation_id :: integer(),
     num_columns :: integer(),
     columns :: [#column_value{}],
-    old_columns :: [#column_value{}],
+    old_columns :: [#column_value{}] | undefined,
     tuple_type :: tuple_type()
 }).
 
