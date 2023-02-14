@@ -68,6 +68,20 @@ Callback modules should implement method `handle_replication_msg`
     }).
   ```
 
+On optional callback module may implement the method `handle_logical_decoding_msg`
+If implemented, messages in the form of `{logical_decoding_msg, Flags, LSN, Prefix, Content}` will be received.
+
+```erlang
+-callback handle_logical_decoding_msg(#logical_decoding_msg{}) -> ok.
+
+-record(logical_decoding_msg, {
+    flags :: integer(),
+    lsn :: integer(),
+    prefix :: binary(),
+    content :: binary()
+}).
+```
+
 ### Create replication slot
 You may need to execute this step every time you start you Erlang application, 
 if you select initial data from tables when start your application (Use case Consistent cache). 
@@ -274,6 +288,7 @@ epgl.pglogical_config.binary.float8_byval|boolean||Upstream PostgreSQL’s float
 epgl.pglogical_config.binary.integer_datetimes|boolean||Whether TIME, TIMESTAMP and TIMESTAMP WITH TIME ZONE will be sent using integer or floating point representation.
 epgl.pglogical_config.binary.basetypes_major_version|string||PostgreSQL mahor version of server, e.g. 905, (select PG_VERSION_NUM()/100);
 epgl.pglogical_config.pg_version|string||PostgreSQL server_version of server, e.g. 90506  (select PG_VERSION_NUM();)
+epgl.logical_decoding_msg_callback|atom|undefined|Callback module for handling logical replication messages
 
 ### epgl:start_subscriber options
 It is possible to define some options when start_subscriber, i.e. call `epgl:start_subscriber(SubscriberId, DBArgs, Callbacks, Options)` 

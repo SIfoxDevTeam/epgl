@@ -42,12 +42,19 @@
     Metadata :: #{TableName :: string() => [ColumnName :: string()]},
     Rows :: [#row{}]) -> ok.
 
+%% Optional
+-callback handle_logical_decoding_msg(#logical_decoding_msg{}) -> ok.
+
+-optional_callbacks([ handle_logical_decoding_msg/1 ]).
+
 -record(state, {
     db_connect_opts         :: epgl:db_args(),
     conn                    :: pid() | undefined,
     conn_normal             :: pid() | undefined,
+    logical_decoding_msg_callback :: atom(),
     callbacks               :: map(),
     metadata = #{}          :: map(),
+    logical_decoding_msgs = [] :: list(),
     rows = []               :: list(),
     replication_slot        :: string() | undefined,
     replication_set         :: string() | undefined,
@@ -85,6 +92,7 @@ init([DBArgs, Callbacks, Options]) ->
 
     State = #state{
         conn = Conn,
+        logical_decoding_msg_callback = application:get_env(?APP, logical_decoding_msg_callback, undefined),
         callbacks = Callbacks,
         db_connect_opts = DBArgs,
         last_processed_lsn = 0,
@@ -295,6 +303,7 @@ handle_call({pglogical_msg, _StartLSN, _EndLSN, #begin_msg{}}, _From, State = #s
 handle_call({pglogical_msg, _StartLSN, EndLSN, #commit_msg{}}, _From, State) ->
     #state{
         rows = Rows,
+        logical_decoding_msgs = LogicalDecodingMsgs,
         metadata = Metadata,
         callbacks = Callbacks,
         check_lsn_mode = CheckLSNMode,
@@ -331,11 +340,23 @@ handle_call({pglogical_msg, _StartLSN, EndLSN, #commit_msg{}}, _From, State) ->
                         fun({CbMod, {MetadataAcc, RowAcc}}) ->
                             ok = CbMod:handle_replication_msg(MetadataAcc, lists:flatten(RowAcc))
                         end, maps:to_list(CallbackData)),
-                    {reply, ok, State#state{rows = [], last_processed_lsn = NewLastEndLSN}}
+                    case State#state.logical_decoding_msg_callback of
+                      undefined ->
+                        ok;
+                      LogicalDecodingMsgCallback ->
+                        lists:foreach(fun(Msg) ->
+                                        ok = LogicalDecodingMsgCallback:handle_logical_decoding_msg(Msg)
+                                      end, LogicalDecodingMsgs)
+                    end,
+                    {reply, ok, State#state{logical_decoding_msgs = [], rows = [], last_processed_lsn = NewLastEndLSN}}
             end;
         skip ->
             {reply, ok, State#state{rows = []}}
     end;
+
+handle_call({pglogical_msg, _StartLSN, _EndLSN, #logical_decoding_msg{} = Msg}, _From, State) ->
+    #state{logical_decoding_msgs = Msgs} = State,
+    {reply, ok, State#state{logical_decoding_msgs = [Msg | Msgs]}};
 
 handle_call({pglogical_msg, _StartLSN, _EndLSN, #relation_msg{name = TableName, id = Relidentifier,
     columns = Columns, namespace = SchemaName}}, _From,
@@ -450,7 +471,7 @@ start_replication(pgoutput, Conn, ReplicationSlot, PublicationNames, _ExtraConfi
         ReplicationSlot, ?MODULE,
         #cb_state{pid = self(), debug = DebugMode, decoder_module = epgl_pgoutput_decoder},
         "0/0",
-        "proto_version '1', publication_names '\"" ++ PublicationNames ++ "\"'",
+        "messages 'true', proto_version '1', publication_names '\"" ++ PublicationNames ++ "\"'",
         [{align_lsn, AlignLSN}]);
 start_replication(pglogical, Conn, ReplicationSlot, ReplicationSets, PglogicalConfig, AlignLSN) ->
     DebugMode = application:get_env(?APP, debug, false),

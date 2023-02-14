@@ -65,7 +65,7 @@ get_table_initial_state_test(Pid) ->
     {ok, SnapshotName, _ConsistentPoint} = epgl:create_replication_slot(Pid, "epgl_test_repl_slot"),
     {ok, _Columns, Values} = epgl:get_table_initial_state(Pid, "test_table1", SnapshotName),
     ok = epgl:drop_replication_slot(Pid, "epgl_test_repl_slot"),
-    ?_assertEqual([{1,<<"one">>}, {2,<<"two">>}, {3,null}], Values).
+    ?_assertEqual([{1,<<"one">>}, {2,<<"two">>}, {3,null}, {6,<<"six">>}], Values).
 
 init_replication_set_test(Pid) ->
     true = erlang:register(?MODULE, self()),
@@ -75,7 +75,8 @@ init_replication_set_test(Pid) ->
             [
                 {row,"public.test_table1",insert,[1,<<"one">>]},
                 {row,"public.test_table1",insert,[2,<<"two">>]},
-                {row,"public.test_table1",insert,[3,null]}
+                {row,"public.test_table1",insert,[3,null]},
+                {row,"public.test_table1",insert,[6,<<"six">>]}
             ]}
     ],
     ok = epgl:init_replication_set(Pid, "epgl_test_repl_set_1", SnapshotName),
@@ -86,6 +87,7 @@ init_replication_set_test(Pid) ->
 
 start_replication_test(Pid) ->
     true = erlang:register(?MODULE, self()),
+    truncate_tables(), %% Clean any old data from previous tests
     {ok, _, _} = epgl:create_replication_slot(Pid, "epgl_test_repl_slot"),
     make_changes(),
     ExpectedMsgs = [
@@ -172,4 +174,12 @@ make_changes() ->
             age('2016-10-25 16:28:56.669049', '2016-10-20 11:28:56.669049'), '127.0.0.1', '127.0.0.2',
             '{\"a\": 2, \"b\": [\"c\", \"d\"]}');"),
     [{ok, 3}, {ok, 1}] = epgsql:squery(C, "delete from test_table1 where id >= 4;delete from test_table3 where id = 1;"),
+    epgsql:close(C).
+
+truncate_tables() ->
+    {ok, C} = epgsql:connect("localhost", "epgl_test", "epgl_test",
+        [{database, "epgl_test_db"}, {port, 10432}]),
+    _ = epgsql:squery(C, "truncate test_table1"),
+    _ = epgsql:squery(C, "truncate test_table2"),
+    _ = epgsql:squery(C, "truncate test_table3"),
     epgsql:close(C).
