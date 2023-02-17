@@ -13,6 +13,13 @@
     xid :: integer()
 }).
 
+-record(logical_decoding_msg, {
+    flags :: integer(),
+    lsn :: integer(),
+    prefix :: binary(),
+    content :: binary()
+}).
+
 -record(commit_msg, {
     flags :: integer(),
     commit_lsn :: integer(),

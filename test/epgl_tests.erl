@@ -1,7 +1,7 @@
 -module(epgl_tests).
 
 -include_lib("eunit/include/eunit.hrl").
--export([handle_replication_msg/2, is_pglogical_exists/0]).
+-export([handle_replication_msg/2, handle_logical_decoding_msg/1, is_pglogical_exists/0]).
 -define(DB_ARGS, [{hostname, "localhost"}, {port, 10432},
     {database, "epgl_test_db"}, {username, "epgl_test"}, {password, "epgl_test"}]).
 
@@ -140,7 +140,18 @@ all_test_() ->
                                     connection_test(Pid),
                                     create_replication_slot_temporary_test(Pid)
                                 ]}
-                        end}
+                        end},
+                    {setup,
+                        fun start_pgoutput1/0,
+                        fun stop/1,
+                        fun(Pid) ->
+                            {inorder,
+                                [
+                                    connection_test(Pid),
+                                    logical_decoding_message_test(Pid)
+                                ]}
+                        end
+                    }
                 ];
             false -> []
         end,
@@ -150,6 +161,7 @@ start(TwoMsgsForPKUpdate, AutoCast, Plugin) ->
     application:set_env(epgl, two_msgs_for_pk_update, TwoMsgsForPKUpdate),
     application:set_env(epgl, max_reconnect_attempts, 10),
     application:set_env(epgl, repl_slot_output_plugin, Plugin),
+    application:set_env(epgl, logical_decoding_msg_callback, ?MODULE),
 
     Opts = #{"public.test_table1" => [?MODULE], "public.test_table3" => [?MODULE]},
     Name = list_to_atom("epgl_subscriber_" ++ integer_to_list(erlang:unique_integer([positive]))),
@@ -194,6 +206,7 @@ start_pgoutput3() ->
     start(TwoMsgsForPKUpdate, AutoCast, Plugin).
 
 stop(Pid) ->
+    application:unset_env(epgl, logical_decoding_msg_callback),
     catch epgl:stop(Pid).
 
 connection_test(Pid) ->
@@ -397,6 +410,22 @@ pk_update_test(Pid) ->
             [
                 {row,"public.test_table1",delete,[<<"7">>,null]}
             ]}
+     ],
+     ok = epgl:start_replication(Pid, "epgl_test_repl_slot", "epgl_test_repl_set_1"),
+     Res = receive_replication_msgs(ExpectedMsgs),
+     true = erlang:unregister(?MODULE),
+     ?_assertEqual(ok, Res).
+
+logical_decoding_message_test(Pid) ->
+    true = erlang:register(?MODULE, self()),
+    {ok, _, _} = epgl:create_replication_slot(Pid, "epgl_test_repl_slot"),
+    logical_decoding_msg(),
+    ExpectedMsgs = [
+        {#{"public.test_table1" => [<<"id">>,<<"value">>]},
+            [
+                {row,"public.test_table1",insert,[<<"6">>,<<"six">>]}
+            ]},
+        {logical_decoding_msg, <<"test_prefix">>, <<"message">>}
     ],
     ok = epgl:start_replication(Pid, "epgl_test_repl_slot", "epgl_test_repl_set_1"),
     Res = receive_replication_msgs(ExpectedMsgs),
@@ -410,6 +439,9 @@ receive_replication_msgs([Msg | T]) ->
         {replication_msg, ColumnsDescription, Fields} ->
 %%            ct:print("replication_msg ~p  ~p~n", [ColumnsDescription, Fields]),
             {ColumnsDescription, Fields} = Msg,
+            receive_replication_msgs(T);
+        {logical_decoding_msg, Prefix, Content} ->
+            {logical_decoding_msg, Prefix, Content} = Msg,
             receive_replication_msgs(T)
     after
         60000 ->
@@ -418,6 +450,11 @@ receive_replication_msgs([Msg | T]) ->
 
 handle_replication_msg(ColumnsDescription, Fields) ->
     ?MODULE ! {replication_msg, ColumnsDescription, Fields},
+    ok.
+
+handle_logical_decoding_msg(Msg) ->
+    {logical_decoding_msg,_,_, Prefix, Content} = Msg,
+    ?MODULE ! {logical_decoding_msg, Prefix, Content},
     ok.
 
 make_changes() ->
@@ -444,6 +481,14 @@ pk_update() ->
     {ok, 1} = epgsql:squery(C, "insert into test_table1 (id, value) values (6, 'six');"),
     {ok, 1} = epgsql:squery(C, "update test_table1 set id = 7 where id = 6;"),
     {ok, 1} = epgsql:squery(C, "delete from test_table1 where id >= 4;"),
+    epgsql:close(C).
+
+logical_decoding_msg() ->
+    {ok, C} = connect(),
+    {ok, _, _} = epgsql:squery(C, "BEGIN;"),
+    {ok, 1} = epgsql:squery(C, "insert into test_table1 (id, value) values (6, 'six');"),
+    {ok, _, [{_}]} = epgsql:squery(C, "SELECT pg_logical_emit_message(true, 'test_prefix', 'message');"),
+    {ok, _, _} = epgsql:squery(C, "COMMIT;"),
     epgsql:close(C).
 
 pg_version() ->

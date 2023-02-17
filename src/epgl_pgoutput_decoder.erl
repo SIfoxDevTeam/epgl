@@ -26,6 +26,7 @@
 
 %% logical replication message types
 -define(MESSAGE_TYPE_BEGIN, $B).
+-define(MESSAGE_TYPE_LOGICAL_DECODING, $M).
 -define(MESSAGE_TYPE_COMMIT, $C).
 -define(MESSAGE_TYPE_ORIGIN, $O).
 -define(MESSAGE_TYPE_RELATION, $R).
@@ -47,6 +48,11 @@
 
 decode(<<?MESSAGE_TYPE_BEGIN:8, Lsn:?int64, CommitTime:?int64, XID:?int32>>) ->
     Rec = #begin_msg{lsn = Lsn, commit_time = CommitTime, xid = XID},
+    {ok, Rec};
+
+decode(<<?MESSAGE_TYPE_LOGICAL_DECODING:8, Flags:8, Lsn:?int64, Rest/binary>>) ->
+    [Prefix, <<Len:?int32, Content:Len/binary>>] = decode_string(Rest),
+    Rec = #logical_decoding_msg{flags = Flags, lsn = Lsn, prefix = Prefix, content = Content},
     {ok, Rec};
 
 decode(<<?MESSAGE_TYPE_COMMIT:8, Flags:8, CommitLsn:?int64, EndLsn:?int64, CommitTime:?int64>>) ->
